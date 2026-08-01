@@ -1,4 +1,0 @@
-flask
-openai
-opencv-python
-pillow
