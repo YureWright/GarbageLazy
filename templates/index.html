@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>垃圾分类与回收定价</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "微软雅黑", sans-serif; background: #f0f4f0; color: #333; }
+  .container { max-width: 800px; margin: 30px auto; padding: 0 16px; }
+  h1 { text-align: center; color: #2e7d32; margin-bottom: 20px; }
+  .card { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .hidden { display: none; }
+  .btn { padding: 12px 28px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; background: #2e7d32; color: #fff; }
+  .btn:hover { background: #1b5e20; }
+  .btn.secondary { background: #1976d2; }
+  .btn.secondary:hover { background: #0d47a1; }
+  .btn:disabled { background: #aaa; cursor: not-allowed; }
+  .center { text-align: center; }
+  .choice-group { display: flex; gap: 16px; justify-content: center; margin-top: 16px; }
+  .dropzone { border: 2px dashed #2e7d32; border-radius: 10px; padding: 40px; text-align: center; color: #666; margin-top: 16px; }
+  .dropzone.dragover { background: #e8f5e9; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #f5f5f5; }
+  input[type=number], select, input[type=text] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+  input[type=number] { width: 90px; }
+  .add-row { margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .del { color: #c62828; cursor: pointer; }
+  .total { font-size: 22px; color: #2e7d32; font-weight: bold; text-align: right; margin-top: 12px; }
+  .price-list { display: flex; gap: 12px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .price-tag { background: #e8f5e9; border-radius: 6px; padding: 8px 14px; font-size: 14px; }
+  .error { color: #c62828; margin-top: 8px; }
+  .step { color: #2e7d32; font-size: 14px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>垃圾分类与回收定价</h1>
+
+  <!-- 步骤一：开始分类 -->
+  <div class="card center" id="step1">
+    <div class="step">步骤一</div>
+    <button class="btn" onclick="showStep(2)">开始分类</button>
+  </div>
+
+  <!-- 步骤二：选择识别方式 -->
+  <div class="card center hidden" id="step2">
+    <div class="step">步骤二：选择识别方式</div>
+    <div class="choice-group">
+      <button class="btn" id="btnCamera" onclick="openCamera()">A. 摄像头拍照识别</button>
+      <button class="btn secondary" onclick="document.getElementById('fileInput').click()">B. 上传照片识别</button>
+    </div>
+    <div id="cameraArea" class="hidden" style="margin-top:16px">
+      <video id="video" autoplay playsinline style="max-width:100%;border-radius:8px"></video>
+      <div style="margin-top:8px">
+        <button class="btn" id="btnSnap" onclick="snapPhoto()">拍照并识别</button>
+        <button class="btn secondary" onclick="closeCamera()">关闭摄像头</button>
+      </div>
+    </div>
+    <div class="dropzone" id="dropzone">或将图片拖拽到此处</div>
+    <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="uploadImage(this.files[0])">
+    <div class="error" id="step2Error"></div>
+  </div>
+
+  <!-- 步骤三：整理识别结果 -->
+  <div class="card hidden" id="step3">
+    <div class="step">步骤三：确认识别结果并标注重量（公斤）</div>
+    <table>
+      <thead><tr><th>垃圾名称</th><th>分类</th><th>投放方式</th><th>重量(kg)</th><th></th></tr></thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+    <div class="add-row">
+      <input type="text" id="addName" placeholder="垃圾名称">
+      <select id="addCategory"></select>
+      <input type="number" id="addWeight" placeholder="重量kg" min="0" step="0.01">
+      <button class="btn secondary" onclick="addItem()">手动补录</button>
+      <button class="btn" onclick="goAddMore()">添加垃圾（拍照/上传）</button>
+    </div>
+    <div class="center" style="margin-top:16px">
+      <button class="btn" id="btnCalc" onclick="calcReward()">计算分类价值</button>
+    </div>
+    <div class="error" id="step3Error"></div>
+  </div>
+
+  <!-- 步骤四：价值结果 -->
+  <div class="card hidden" id="step4">
+    <div class="step">步骤四：分类价值</div>
+    <table>
+      <thead><tr><th>垃圾名称</th><th>分类</th><th>重量(kg)</th><th>奖励(元)</th></tr></thead>
+      <tbody id="rewardBody"></tbody>
+    </table>
+    <div class="total" id="totalReward"></div>
+    <div class="price-list" id="priceList"></div>
+    <div class="center" style="margin-top:16px">
+      <button class="btn" onclick="location.reload()">再来一次</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = ["可回收物", "有害垃圾", "厨余垃圾", "其他垃圾"];
+let items = []; // {name, category, advice, weight}
+
+// 填充分类下拉框
+const addCategory = document.getElementById("addCategory");
+CATEGORIES.forEach(c => addCategory.add(new Option(c, c)));
+
+function showStep(n) {
+  [1,2,3,4].forEach(i => document.getElementById("step"+i).classList.toggle("hidden", i !== n));
+}
+
+function setLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.textContent = loading ? "识别中..." : text;
+}
+
+function showError(id, msg) { document.getElementById(id).textContent = msg || ""; }
+
+// 步骤二 A：浏览器端调用摄像头
+let stream = null;
+
+async function openCamera() {
+  showError("step2Error");
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video: true});
+    document.getElementById("video").srcObject = stream;
+    document.getElementById("cameraArea").classList.remove("hidden");
+  } catch (e) {
+    showError("step2Error", "无法打开摄像头: " + e.message);
+  }
+}
+
+function closeCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  document.getElementById("cameraArea").classList.add("hidden");
+}
+
+// 拍照后将照片发给已有的 /api/classify 接口（内部调用 classify_image 函数）
+function snapPhoto() {
+  const video = document.getElementById("video");
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+  setLoading("btnSnap", true);
+  canvas.toBlob(async blob => {
+    await uploadImage(blob);
+    setLoading("btnSnap", false, "拍照并识别");
+    closeCamera();
+  }, "image/jpeg");
+}
+
+// 步骤二 B：上传图片识别
+async function uploadImage(file) {
+  if (!file) return;
+  showError("step2Error");
+  const fd = new FormData();
+  fd.append("image", file, "photo.jpg");
+  try {
+    const res = await fetch("/api/classify", {method: "POST", body: fd});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    onRecognized(data);
+  } catch (e) {
+    showError("step2Error", "识别失败: " + e.message);
+  }
+}
+
+// 拖拽上传
+const dz = document.getElementById("dropzone");
+dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+dz.addEventListener("drop", e => {
+  e.preventDefault(); dz.classList.remove("dragover");
+  uploadImage(e.dataTransfer.files[0]);
+});
+
+// 识别完成，结果追加到列表并回到步骤三
+function onRecognized(results) {
+  items = items.concat(results.map(r => ({name: r.name, category: r.category, advice: r.advice, weight: ""})));
+  renderItems();
+  showStep(3);
+}
+
+// 步骤三：点击"添加垃圾"，回到步骤二继续拍照/上传，已有结果保留
+function goAddMore() {
+  showStep(2);
+}
+
+function renderItems() {
+  const tbody = document.getElementById("resultBody");
+  tbody.innerHTML = "";
+  items.forEach((item, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.name}</td>
+      <td><select onchange="items[${i}].category=this.value">
+        ${CATEGORIES.map(c => `<option ${c===item.category?"selected":""}>${c}</option>`).join("")}
+      </select></td>
+      <td>${item.advice || "-"}</td>
+      <td><input type="number" min="0" step="0.01" value="${item.weight}" onchange="items[${i}].weight=this.value"></td>
+      <td><span class="del" onclick="items.splice(${i},1);renderItems()">删除</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// 步骤三：手动补录
+function addItem() {
+  const name = document.getElementById("addName").value.trim();
+  const weight = parseFloat(document.getElementById("addWeight").value);
+  if (!name || !(weight > 0)) { showError("step3Error", "请填写垃圾名称和有效重量"); return; }
+  showError("step3Error");
+  items.push({name, category: addCategory.value, advice: "手动补录", weight});
+  document.getElementById("addName").value = "";
+  document.getElementById("addWeight").value = "";
+  renderItems();
+}
+
+// 步骤四：计算价值
+async function calcReward() {
+  const valid = items.filter(it => parseFloat(it.weight) > 0);
+  if (!valid.length) { showError("step3Error", "请至少为一件垃圾填写有效重量"); return; }
+  showError("step3Error");
+  setLoading("btnCalc", true);
+  try {
+    const res = await fetch("/api/reward", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({items: valid.map(it => ({name: it.name, category: it.category, weight: parseFloat(it.weight)}))})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderReward(data);
+    showStep(4);
+  } catch (e) {
+    showError("step3Error", "计算失败: " + e.message);
+  } finally {
+    setLoading("btnCalc", false, "计算分类价值");
+  }
+}
+
+async function renderReward(data) {
+  const tbody = document.getElementById("rewardBody");
+  tbody.innerHTML = "";
+  data.details.forEach(d => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${d.name}</td><td>${d.category}</td><td>${d.weight}</td><td>${d.reward}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("totalReward").textContent = "总计奖励: ¥" + data.total;
+
+  const prices = await (await fetch("/api/prices")).json();
+  document.getElementById("priceList").innerHTML =
+    Object.entries(prices).map(([k, v]) => `<span class="price-tag">${k}: ¥${v}/kg</span>`).join("");
+}
+
+showStep(1);
+</script>
+</body>
+</html>
