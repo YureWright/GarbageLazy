@@ -85,15 +85,16 @@ def handle_garbage(garbage_type, controller, hold_seconds=4):
     controller.flip(pin)          # 翻回
     print(f"{garbage_type} 处理完成\n")
 
-# 创建控制器（确保端口正确）
-ctrl = ServoFlipController(port='COM9')
+if __name__ == "__main__":
+    # 创建控制器（确保端口正确）
+    ctrl = ServoFlipController(port='COM9')
 
-# 处理一种垃圾
-handle_garbage("可回收垃圾", ctrl)   # 引脚4翻转，4秒后翻回
-handle_garbage("不可回收垃圾", ctrl) # 引脚20翻转，4秒后翻回
-# 依次处理...
+    # 处理一种垃圾
+    handle_garbage("可回收垃圾", ctrl)   # 引脚4翻转，4秒后翻回
+    handle_garbage("不可回收垃圾", ctrl) # 引脚20翻转，4秒后翻回
+    # 依次处理...
 
-# 最后关闭连接
-ctrl.close()
+    # 最后关闭连接
+    ctrl.close()
 
 
