@@ -90,7 +90,7 @@ if __name__ == "__main__":
     ctrl = ServoFlipController(port='COM9')
 
     # # 处理一种垃圾
-    handle_garbage("其他垃圾", ctrl)   # 引脚4翻转，4秒后翻回
+    handle_garbage("可回收垃圾", ctrl)   # 引脚4翻转，4秒后翻回
     # handle_garbage("不可回收垃圾", ctrl) # 引脚20翻转，4秒后翻回
     # # 依次处理...
 
