@@ -31,6 +31,10 @@
   .price-tag { background: #e8f5e9; border-radius: 6px; padding: 8px 14px; font-size: 14px; }
   .error { color: #c62828; margin-top: 8px; }
   .step { color: #2e7d32; font-size: 14px; margin-bottom: 8px; }
+  .invest-btn { padding: 4px 14px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; background: #2e7d32; color: #fff; }
+  .invest-btn:hover { background: #1b5e20; }
+  .invest-btn:disabled { background: #aaa; cursor: not-allowed; }
+  .invested { color: #2e7d32; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -66,7 +70,7 @@
   <div class="card hidden" id="step3">
     <div class="step">步骤三：确认识别结果并标注重量（公斤）</div>
     <table>
-      <thead><tr><th>垃圾名称</th><th>分类</th><th>投放方式</th><th>重量(kg)</th><th></th></tr></thead>
+      <thead><tr><th>垃圾名称</th><th>分类</th><th>投放方式</th><th>重量(kg)</th><th>投入</th><th></th></tr></thead>
       <tbody id="resultBody"></tbody>
     </table>
     <div class="add-row">
@@ -178,7 +182,7 @@ dz.addEventListener("drop", e => {
 
 // 识别完成，结果追加到列表并回到步骤三
 function onRecognized(results) {
-  items = items.concat(results.map(r => ({name: r.name, category: r.category, advice: r.advice, weight: ""})));
+  items = items.concat(results.map(r => ({name: r.name, category: r.category, advice: r.advice, weight: "", invested: false, investing: false})));
   renderItems();
   showStep(3);
 }
@@ -193,6 +197,9 @@ function renderItems() {
   tbody.innerHTML = "";
   items.forEach((item, i) => {
     const tr = document.createElement("tr");
+    const investCell = item.invested
+      ? `<td><span class="invested">已投入</span></td>`
+      : `<td><button class="invest-btn" onclick="investItem(${i})" ${item.investing ? "disabled" : ""}>${item.investing ? "投入中..." : "投入"}</button></td>`;
     tr.innerHTML = `
       <td>${item.name}</td>
       <td><select onchange="items[${i}].category=this.value">
@@ -200,9 +207,34 @@ function renderItems() {
       </select></td>
       <td>${item.advice || "-"}</td>
       <td><input type="number" min="0" step="0.01" value="${item.weight}" onchange="items[${i}].weight=this.value"></td>
+      ${investCell}
       <td><span class="del" onclick="items.splice(${i},1);renderItems()">删除</span></td>`;
     tbody.appendChild(tr);
   });
+}
+
+// 步骤三：点击"投入"，调用后端 /api/put 翻转对应分类的舵机
+async function investItem(i) {
+  const item = items[i];
+  if (item.invested || item.investing) return;
+  item.investing = true;
+  renderItems();
+  try {
+    const res = await fetch("/api/put", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({category: item.category})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    item.invested = true;
+    showError("step3Error");
+  } catch (e) {
+    showError("step3Error", "投入失败: " + e.message);
+  } finally {
+    item.investing = false;
+    renderItems();
+  }
 }
 
 // 步骤三：手动补录
@@ -211,7 +243,7 @@ function addItem() {
   const weight = parseFloat(document.getElementById("addWeight").value);
   if (!name || !(weight > 0)) { showError("step3Error", "请填写垃圾名称和有效重量"); return; }
   showError("step3Error");
-  items.push({name, category: addCategory.value, advice: "手动补录", weight});
+  items.push({name, category: addCategory.value, advice: "手动补录", weight, invested: false, investing: false});
   document.getElementById("addName").value = "";
   document.getElementById("addWeight").value = "";
   renderItems();

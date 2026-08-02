@@ -23,7 +23,7 @@ def classify_image(image_path: str) -> list:
         image_base64 = base64.b64encode(f.read()).decode("utf-8")
 
     completion = client.chat.completions.create(
-        model="MODEL",
+        model=MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
