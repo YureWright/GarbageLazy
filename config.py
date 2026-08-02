@@ -1,2 +1,2 @@
-API_KEY = "sk-xxxx"
+API_KEY = "sk-xxx"
 MODEL = "qwen-vl-max"

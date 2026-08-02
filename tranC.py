@@ -63,8 +63,8 @@ import time
 # 映射字典
 GARBAGE_MAP = {
     "可回收垃圾": 4,
-    "不可回收垃圾": 20,
-    "厨余垃圾": 29,
+    "厨余垃圾": 20,
+    "其他垃圾": 29,
     "有害垃圾": 48
 }
 
@@ -89,12 +89,12 @@ if __name__ == "__main__":
     # 创建控制器（确保端口正确）
     ctrl = ServoFlipController(port='COM9')
 
-    # 处理一种垃圾
-    handle_garbage("可回收垃圾", ctrl)   # 引脚4翻转，4秒后翻回
-    handle_garbage("不可回收垃圾", ctrl) # 引脚20翻转，4秒后翻回
-    # 依次处理...
+    # # 处理一种垃圾
+    handle_garbage("其他垃圾", ctrl)   # 引脚4翻转，4秒后翻回
+    # handle_garbage("不可回收垃圾", ctrl) # 引脚20翻转，4秒后翻回
+    # # 依次处理...
 
-    # 最后关闭连接
-    ctrl.close()
+    # # 最后关闭连接
+    # ctrl.close()
 
 
