@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071f20"/><stop offset=".48" stop-color="#244f47"/><stop offset="1" stop-color="#102f2b"/></linearGradient>
+    <radialGradient id="light" cx="72%" cy="20%" r="70%"><stop stop-color="#c8d8a8" stop-opacity=".72"/><stop offset=".3" stop-color="#8cae83" stop-opacity=".25"/><stop offset="1" stop-color="#173c35" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#23483c"/><stop offset="1" stop-color="#061b19"/></linearGradient>
+    <filter id="mist"><feGaussianBlur stdDeviation="26"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+    <g id="cedar">
+      <path d="M0 560C-12 390-7 210 5 0h18c16 198 17 382 8 560Z" fill="#102d29"/>
+      <path d="M18 75-95 220l91-38-142 174 122-53-150 196 159-83 132 59-102-143 102 31-92-132 80 21Z" fill="#173c33"/>
+      <path d="M9 122-54 240l67-27-82 123 77-41 77 37-63-112 61 23Z" fill="#285648" opacity=".9"/>
+    </g>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="760" fill="url(#light)"/>
+  <path d="M0 650C260 585 430 620 660 562c300-75 560-38 940-120v558H0Z" fill="url(#ground)"/>
+  <g opacity=".34" filter="url(#soft)">
+    <use href="#cedar" transform="translate(1150 90) scale(.72)"/><use href="#cedar" transform="translate(1290 55) scale(.86)"/><use href="#cedar" transform="translate(1450 100) scale(.7)"/>
+    <use href="#cedar" transform="translate(980 145) scale(.64)"/><use href="#cedar" transform="translate(815 175) scale(.57)"/>
+  </g>
+  <g opacity=".7">
+    <use href="#cedar" transform="translate(1020 60) scale(1.08)"/><use href="#cedar" transform="translate(1225 0) scale(1.3)"/><use href="#cedar" transform="translate(1510 65) scale(1.08)"/>
+    <use href="#cedar" transform="translate(770 45) scale(1.2)"/>
+  </g>
+  <g>
+    <use href="#cedar" transform="translate(40 -60) scale(1.85)"/><use href="#cedar" transform="translate(330 5) scale(1.5)"/><use href="#cedar" transform="translate(590 130) scale(1.05)"/>
+    <use href="#cedar" transform="translate(1440 -80) scale(1.7)"/>
+  </g>
+  <g fill="none" stroke="#d9e5c5" stroke-linecap="round" opacity=".12" filter="url(#mist)">
+    <path d="M360 360C670 240 885 330 1220 190" stroke-width="48"/><path d="M430 520C770 420 1040 460 1450 315" stroke-width="34"/>
+  </g>
+  <path d="M0 810C310 740 570 840 865 758c250-70 480-25 735-110v352H0Z" fill="#071e1a" opacity=".82"/>
+</svg>

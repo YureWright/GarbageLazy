@@ -105,17 +105,4 @@ description: "识别本地图片中的垃圾并进行四分类（可回收物/�
 4. **易腐测试**：能腐烂变质吗？能 → 厨余垃圾；不能且前三类都不符合 → 其他垃圾。
 5. **复合物品拆分**：如奶茶杯、带电池的玩具，拆分为多个元素分别列出，并在 advice 中说明。
 
-## Python 调用方式
 
-项目根目录下 `classify.py` 中的 `classify_image(image_path)` 函数：
-
-- **输入**：本地图片文件的绝对路径（str）
-- **输出**：上述 JSON 结构的列表（list[dict]），每个元素为一件垃圾的名称、分类和投放方式
-
-```python
-from classify import classify_image
-
-results = classify_image("C:/path/to/image.jpg")
-for item in results:
-    print(item["name"], item["category"])
-```
