@@ -26,7 +26,20 @@ except Exception as e:
 
 @app.route("/")
 def index():
+    """宣传海报页，作为系统入口"""
+    return render_template("promo.html")
+
+
+@app.route("/app")
+def app_index():
+    """主应用"""
     return render_template("index.html")
+
+
+@app.route("/promo")
+def promo():
+    """宣传落地页（直达）"""
+    return render_template("promo.html")
 
 
 @app.route("/api/classify", methods=["POST"])

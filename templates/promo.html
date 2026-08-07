@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>你是什么垃圾 · 变废为宝</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #040b09; color: #eafff5; overflow: hidden;
+    user-select: none;
+  }
+
+  /* ===== 黑森林背景 ===== */
+  .sky {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(26, 92, 70, .5), transparent 55%),
+      radial-gradient(ellipse at 85% 20%, rgba(0, 200, 170, .08), transparent 40%),
+      linear-gradient(#010403 0%, #061410 55%, #0b2017 100%);
+  }
+  .trees { position: fixed; inset: auto 0 0 0; z-index: 1; height: 58vh; pointer-events: none; }
+  .mist {
+    position: fixed; inset: auto 0 0 0; z-index: 2; height: 46vh; pointer-events: none;
+    background: linear-gradient(transparent, rgba(90, 255, 190, .05) 55%, rgba(8, 26, 20, .92));
+    filter: blur(14px);
+  }
+  .firefly-wrap { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .firefly {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: #7dffcf; box-shadow: 0 0 8px #3dffa8, 0 0 18px rgba(61, 255, 168, .6);
+    opacity: 0; animation: firefly var(--t) linear infinite;
+  }
+  @keyframes firefly {
+    0% { opacity: 0; transform: translate(0, 0) scale(.6); }
+    10% { opacity: .9; }
+    50% { opacity: .5; transform: translate(var(--dx), var(--dy)) scale(1); }
+    90% { opacity: .8; }
+    100% { opacity: 0; transform: translate(calc(var(--dx) * 1.6), calc(var(--dy) * 1.6)) scale(.4); }
+  }
+
+  canvas#fx { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+
+  /* ===== 中央内容 ===== */
+  .content {
+    position: relative; z-index: 4; height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 0 5vw;
+  }
+  .eyebrow {
+    letter-spacing: .42em; font-size: clamp(11px, 1.3vw, 14px); color: #3dffa8;
+    text-transform: uppercase; margin-bottom: 20px;
+    text-shadow: 0 0 14px rgba(61, 255, 168, .7);
+  }
+  h1 {
+    font-size: clamp(56px, 12.5vw, 176px); font-weight: 900; line-height: 1.04;
+    letter-spacing: .045em;
+    background: linear-gradient(180deg, #ffffff 12%, #c8ffe4 38%, #3dffa8 66%, #00e5ff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 16px rgba(61, 255, 168, .5)) drop-shadow(0 0 70px rgba(0, 229, 255, .28));
+    animation: h1breathe 5.5s ease-in-out infinite;
+  }
+  @keyframes h1breathe {
+    50% { filter: drop-shadow(0 0 30px rgba(61, 255, 168, .75)) drop-shadow(0 0 110px rgba(0, 229, 255, .42)); }
+  }
+  .sub { margin-top: 24px; font-size: clamp(14px, 1.9vw, 21px); color: #bfe8d6; letter-spacing: .2em; }
+
+  /* ===== 垃圾变宝藏 ===== */
+  .transform {
+    margin-top: 52px; display: flex; align-items: center; gap: clamp(18px, 3vw, 40px);
+  }
+  .slot {
+    width: clamp(118px, 17vw, 190px); height: clamp(118px, 17vw, 190px);
+    border-radius: 50%; display: grid; place-items: center; font-size: clamp(50px, 7vw, 84px);
+    border: 1px solid rgba(61, 255, 168, .16); background: rgba(10, 34, 25, .35);
+    position: relative; overflow: hidden; box-shadow: inset 0 0 40px rgba(0, 0, 0, .5);
+  }
+  .slot .icon { transition: transform .3s, filter .3s; }
+  .slot.garbage .icon { animation: wobble 1.7s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(61, 255, 168, .5)); }
+  .slot.treasure .icon { animation: floaty 1.6s ease-in-out infinite; filter: drop-shadow(0 0 22px rgba(255, 215, 94, .85)); }
+  @keyframes wobble { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  @keyframes floaty { 50% { transform: translateY(-12px) scale(1.07); } }
+  .slot .label {
+    position: absolute; bottom: 10px; left: 0; right: 0; text-align: center;
+    font-size: 10px; letter-spacing: .34em; color: #7fb8a0; text-transform: uppercase;
+  }
+  .slot.treasure .label { color: #ffd75e; }
+  .flash {
+    position: absolute; inset: -30%; border-radius: 50%; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,215,94,.55) 40%, transparent 72%);
+  }
+  .flash.on { animation: flashAnim .55s ease-out; }
+  @keyframes flashAnim { 0% { opacity: 0; } 28% { opacity: .95; } 100% { opacity: 0; } }
+  .t-arrow { font-size: clamp(26px, 4vw, 46px); color: #3dffa8; opacity: .9; animation: arrowPulse 1.15s ease-in-out infinite; text-shadow: 0 0 14px rgba(61,255,168,.8); }
+  @keyframes arrowPulse { 50% { opacity: .3; transform: translateX(5px); } }
+
+  .hint { margin-top: 46px; font-size: 12px; letter-spacing: .3em; color: #7fb8a0; }
+  .hint b { color: #3dffa8; font-weight: 600; }
+
+  /* ===== 入口按钮 ===== */
+  .cta { margin-top: 40px; display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .cta .btn {
+    padding: 14px 32px; border-radius: 999px; font-size: 15px; letter-spacing: .14em;
+    text-decoration: none; cursor: pointer; transition: .25s; border: 1px solid rgba(61,255,168,.55);
+    color: #b9ffe2; background: rgba(10, 34, 25, .4); box-shadow: 0 0 18px rgba(61,255,168,.15);
+  }
+  .cta .btn:hover { background: rgba(61,255,168,.16); box-shadow: 0 0 30px rgba(61,255,168,.55); transform: translateY(-2px); }
+  .cta .btn.primary { background: linear-gradient(135deg, #0f8f60, #3dffa8); color: #03271a; border: none; font-weight: 700; }
+  .cta .btn.primary:hover { box-shadow: 0 0 36px rgba(61,255,168,.75); }
+
+  /* ===== 图片弹窗 ===== */
+  .modal { position: fixed; inset: 0; z-index: 7; display: none; place-items: center; background: rgba(0,0,0,.84); backdrop-filter: blur(6px); }
+  .modal.open { display: grid; }
+  .modal img { max-width: 92vw; max-height: 88vh; border-radius: 12px; box-shadow: 0 0 60px rgba(61,255,168,.28); }
+  .modal .close { position: absolute; top: 16px; right: 24px; font-size: 36px; color: #3dffa8; cursor: pointer; line-height: 1; }
+
+  /* ===== 垃圾桶光标 ===== */
+  #trash {
+    position: fixed; left: 0; top: 0; z-index: 6; pointer-events: none;
+    width: 44px; height: 44px; will-change: transform;
+    display: grid; place-items: center; filter: drop-shadow(0 0 10px rgba(61, 255, 168, .55));
+  }
+  #trash svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+  <div class="sky"></div>
+  <svg class="trees" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <g id="pine">
+        <path d="M0 0l24 44h-14l22 40h-13l20 34h-17l14 24-36 26-36-26 14-24h-17l20-34h-13l22-40z"/>
+      </g>
+    </defs>
+    <g fill="#03120d" opacity=".92">
+      <use href="#pine" transform="translate(70 330) scale(2.1)"/>
+      <use href="#pine" transform="translate(210 360) scale(2.6)"/>
+      <use href="#pine" transform="translate(360 345) scale(2.3)"/>
+      <use href="#pine" transform="translate(520 365) scale(2.8)"/>
+      <use href="#pine" transform="translate(700 340) scale(2.4)"/>
+      <use href="#pine" transform="translate(880 362) scale(2.7)"/>
+      <use href="#pine" transform="translate(1060 350) scale(2.4)"/>
+      <use href="#pine" transform="translate(1240 335) scale(2.2)"/>
+      <use href="#pine" transform="translate(1370 360) scale(2.6)"/>
+    </g>
+    <g fill="#06231a" opacity=".9">
+      <use href="#pine" transform="translate(140 300) scale(1.7)"/>
+      <use href="#pine" transform="translate(300 315) scale(1.9)"/>
+      <use href="#pine" transform="translate(460 295) scale(1.6)"/>
+      <use href="#pine" transform="translate(630 310) scale(1.8)"/>
+      <use href="#pine" transform="translate(800 300) scale(1.65)"/>
+      <use href="#pine" transform="translate(980 312) scale(1.85)"/>
+      <use href="#pine" transform="translate(1150 298) scale(1.7)"/>
+      <use href="#pine" transform="translate(1320 308) scale(1.8)"/>
+    </g>
+  </svg>
+  <div class="firefly-wrap" id="fireflies"></div>
+  <div class="mist"></div>
+  <canvas id="fx"></canvas>
+
+  <div class="content">
+    <div class="eyebrow">AI 垃圾分类 · 变废为宝</div>
+    <h1>你是什么垃圾</h1>
+    <div class="sub">拍一张照，分对类，让废弃变成宝藏</div>
+    <div class="transform">
+      <div class="slot garbage" id="slotG">
+        <span class="flash" id="flashG"></span>
+        <span class="icon" id="iconG">🥤</span>
+        <span class="label">垃圾</span>
+      </div>
+      <div class="t-arrow">→</div>
+      <div class="slot treasure" id="slotT">
+        <span class="flash" id="flashT"></span>
+        <span class="icon" id="iconT">💰</span>
+        <span class="label">宝藏</span>
+      </div>
+    </div>
+    <div class="hint">移动鼠标，<b>垃圾桶</b>会洒下金币 · 垃圾与宝藏正在转化</div>
+    <div class="cta">
+      <button class="btn primary" onclick="location.href='/app'">进入系统 →</button>
+      <button class="btn" onclick="showPic()">查看循环宣传图</button>
+    </div>
+  </div>
+
+  <!-- 循环宣传图弹窗 -->
+  <div class="modal" id="picModal" onclick="hidePic()">
+    <span class="close">×</span>
+    <img src="/static/images/循环宣传图.png" alt="循环宣传图">
+  </div>
+
+  <div id="trash" aria-hidden="true">
+    <svg viewBox="0 0 44 44" fill="none">
+      <path d="M14 11V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v2h9a1 1 0 0 1 0 2h-2l-2.2 23a4 4 0 0 1-4 3.7H14.2a4 4 0 0 1-4-3.7L8 13H6a1 1 0 0 1 0-2h9z" fill="#0a241c" stroke="#3dffa8" stroke-width="1.4"/>
+      <path d="M19 18v13M25 18v13" stroke="#3dffa8" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+<script>
+(() => {
+  const TRASH_ITEMS = ["🥤", "🍾", "🥫", "📦", "🗑️", "🛍️", "🧴", "📰"];
+  const TREASURES  = ["💰", "💎", "🪙", "✨", "🏆", "🪙", "💎", "💰"];
+
+  /* ===== 宣传图弹窗 ===== */
+  window.showPic = () => document.getElementById("picModal").classList.add("open");
+  window.hidePic = () => document.getElementById("picModal").classList.remove("open");
+
+  /* ===== 萤火虫 ===== */
+  const fw = document.getElementById("fireflies");
+  for (let i = 0; i < 26; i++) {
+    const f = document.createElement("i");
+    f.className = "firefly";
+    f.style.left = Math.random() * 100 + "%";
+    f.style.top  = 15 + Math.random() * 75 + "%";
+    f.style.setProperty("--dx", (Math.random() * 160 - 80).toFixed(0) + "px");
+    f.style.setProperty("--dy", (Math.random() * 120 - 60).toFixed(0) + "px");
+    f.style.setProperty("--t", (6 + Math.random() * 9).toFixed(1) + "s");
+    f.style.animationDelay = (-Math.random() * 12).toFixed(1) + "s";
+    fw.appendChild(f);
+  }
+
+  /* ===== 画布：金币洒落 ===== */
+  const canvas = document.getElementById("fx");
+  const ctx = canvas.getContext("2d");
+  let W, H;
+  function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+  resize(); addEventListener("resize", resize);
+
+  const coins = [];
+  function spawnCoin(x, y) {
+    if (coins.length > 260) return;
+    coins.push({
+      x: x + (Math.random() * 26 - 13), y: y + 6,
+      vx: (Math.random() * 1.6 - .8), vy: 1.2 + Math.random() * 2.2,
+      r: 3 + Math.random() * 4, rot: Math.random() * Math.PI * 2, vr: (Math.random() - .5) * .3,
+      life: 1, fade: .006 + Math.random() * .012
+    });
+  }
+
+  /* ===== 垃圾桶光标跟随 ===== */
+  const trash = document.getElementById("trash");
+  let mx = innerWidth / 2, my = innerHeight / 2, cx = mx, cy = my;
+  addEventListener("mousemove", e => {
+    mx = e.clientX; my = e.clientY;
+    if (Math.random() < .85) spawnCoin(mx, my);
+  });
+  function follow() {
+    cx += (mx - cx) * .28; cy += (my - cy) * .28;
+    trash.style.transform = `translate(${cx - 22}px, ${cy - 30}px)`;
+    requestAnimationFrame(follow);
+  }
+  follow();
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      c.x += c.vx; c.y += c.vy; c.rot += c.vr; c.life -= c.fade;
+      if (c.life <= 0) { coins.splice(i, 1); continue; }
+      ctx.save();
+      ctx.translate(c.x, c.y); ctx.rotate(c.rot);
+      ctx.globalAlpha = Math.max(c.life, 0);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, c.r * 2);
+      g.addColorStop(0, "rgba(255,245,190,1)");
+      g.addColorStop(.5, "rgba(255,215,94,.9)");
+      g.addColorStop(1, "rgba(255,170,40,0)");
+      ctx.fillStyle = g;
+      ctx.shadowColor = "rgba(255,215,94,.8)"; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  /* ===== 垃圾 → 宝藏 循环 ===== */
+  const iconG = document.getElementById("iconG");
+  const iconT = document.getElementById("iconT");
+  const flashG = document.getElementById("flashG");
+  const flashT = document.getElementById("flashT");
+  const slotG = document.getElementById("slotG");
+  const slotT = document.getElementById("slotT");
+
+  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+  function cycle() {
+    iconG.textContent = pick(TRASH_ITEMS);
+    slotG.classList.add("garbage");
+    flashG.classList.remove("on"); void flashG.offsetWidth; flashG.classList.add("on");
+    setTimeout(() => {
+      flashT.classList.remove("on"); void flashT.offsetWidth; flashT.classList.add("on");
+      iconT.textContent = pick(TREASURES);
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          const rect = slotT.getBoundingClientRect();
+          spawnCoin(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }, i * 40);
+      }
+    }, 620);
+    setTimeout(cycle, 2400);
+  }
+  cycle();
+})();
+</script>
+</body>
+</html>
